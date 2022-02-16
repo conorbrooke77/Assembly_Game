@@ -79,31 +79,87 @@ WELCOME:
 *-------------------------------------------------------
 
 GAMELOOP:
-    BSR HUD #Displays the HUD AFTER EVERY LOOP
+   * BSR HUD #Displays the HUD AFTER EVERY LOOP
     BSR SHOP #ALLOWS THE USER TO MAKE PURCHASES
     BSR CLEAR_SCREEN #CLEARS THE SCREEN 
     BRA UPDATE
 
+*-------------------------------------------------------
+*-----------------THE SHOP---------------------
+*-------------------------------------------------------
 SHOP:
-    
-    LEA BUY_A_TREE, A1
+    *LOAD SHOP GRAPHICS
+    BSR SHOP_GUI
+    BSR SHOP_INPUT
+    RTS
+
+SHOP_GUI:
+    LEA SHOP_MENU, A1
     MOVE.B #14, D0
     TRAP #15
     
-    MOVE.W   #100,D1     ; delay in 1/100th of seconds
-    MOVE.B   #23,D0
-    TRAP     #15
-    
-    LEA CHOICE, A1
+    RTS
+
+SHOP_INPUT:
+    MOVE.B #4, D0
+    TRAP #15
+    MOVE.B D1, D3
+  
+    LEA ITEM_QUANTITY, A1
     MOVE.B #14, D0
     TRAP #15
     
     MOVE.B #4, D0
     TRAP #15
     
-    CMP #1, D1
-    BNE UPDATE
-    ADD D1, $4100
+    *MENU'S IF ELSE STATEMENT
+    CMP #1, D3
+    BEQ ADD_TREE_SR
+    
+    CMP #2, D3
+    BEQ ADD_SOLARPANEL_SR
+    
+    CMP #3, D3
+    BEQ ADD_WINDMILLS_SR
+    
+    CMP #4, D3
+    BEQ UPGRADE
+    
+    RTS
+   
+ADD_TREE_SR:
+
+    MULU COST_OF_TREE, D1
+    CMP $4400, D1
+    BEQ EPIC
+    
+    RTS
+EPIC:
+    LEA SUCCESS, A1
+    MOVE.B #14, D0
+    TRAP #15
+    
+    MOVE.W   #600,D1
+    MOVE.B   #23,D0
+    TRAP     #15
+    
+    RTS
+    
+ADD_SOLARPANEL_SR:
+
+    
+    RTS
+    
+ADD_WINDMILLS_SR
+
+    
+    RTS
+
+UPGRADE:
+    LEA UPGRADES, A1
+    MOVE.B #14, D0
+    TRAP #15
+    
     RTS
     
 HUD:
@@ -196,6 +252,10 @@ CLEAR_SCREEN:
 CR EQU $0D
 LF EQU $0A
 
+*USEFUL STRINGS
+TAB:                DC.B $09,0
+LINE_BREAK:         DC.B $0D,$0A,0
+
 GAME_LOAD_SCREEN:   DC.B   $0D,$0A,$0D,$0A,$0D,$0A,$0D,$0A     
                     DC.B '        88b  d88. d888888b .d8888. .d8888. d888888b  .d88b.  d8b   db',$0D,$0A  
                     DC.B '        88 YbdP 88    88   88   YP  88  YP     88   .8P  Y8. 888o  88',$0D,$0A        
@@ -254,9 +314,44 @@ FOREST:
                     DC.B '      / ^   ^   ^    ^  ||___|___||||||||||||___|__|||          | |           |',$0D,$0A
                     DC.B '     / ^ ^ ^  ^  ^  ^   ||||||||||||||||||||||||||||||oooooooooo| |ooooooo  |',$0D,$0A
                     DC.B '     ooooooooooooooooooooooooooooooooooooooooooooooooooooooooo  ',$0D,$0A, 0
-                                                                                                                          
-TAB:                DC.B $09,0
-LINE_BREAK:         DC.B $0D,$0A,0
+                    
+SHOP_MENU:          
+                    DC.B '  *------------------------------------------------------*',$0D,$0A
+                    DC.B '  *----------------------THE SHOP------------------------*',$0D,$0A
+                    DC.B '  *------------------------------------------------------*',$0D,$0A
+                    DC.B $0D,$0A
+                    DC.B '    Climate Saving Resources  ',$0D,$0A                     
+                    DC.B $0D,$0A
+                    DC.B '  1. Purchase each Tree for 1000 euro',$0D,$0A 
+                    DC.B '  2. Purchase each Solar Panel for 10000 euro',$0D,$0A
+                    DC.B '  3. Purchase each Windmill for 100000 euro',$0D,$0A
+                    DC.B $0D,$0A
+                    DC.B '  4. Check Upgrades',$0D,$0A,$0D,$0A
+                    DC.B '  *------------------------------------------------------*',$0D,$0A
+                    DC.B '  *------------------------------------------------------*',$0D,$0A
+                    DC.B '  *------------------------------------------------------*',$0D,$0A
+                    DC.B $0D,$0A,$0D,$0A
+                    DC.B ' Choose an item above, or press 0 to exit the shop: ', 0
+
+UPGRADES:           DC.B '  *------------------------------------------------------*',$0D,$0A
+                    DC.B '  *--------------------THE UPGRADES----------------------*',$0D,$0A
+                    DC.B '  *------------------------------------------------------*',$0D,$0A
+                    DC.B $0D,$0A
+                    DC.B '    Climate Saving Resources  ',$0D,$0A                     
+                    DC.B $0D,$0A
+                    DC.B '  1. Purchase each Tree for 1000 euro',$0D,$0A 
+                    DC.B '  2. Purchase each Solar Panel for 10000 euro',$0D,$0A
+                    DC.B '  3. Purchase each Windmill for 100000 euro',$0D,$0A
+                    DC.B $0D,$0A
+                    DC.B '  4. Check Upgrades',$0D,$0A,$0D,$0A
+                    DC.B '  *------------------------------------------------------*',$0D,$0A
+                    DC.B '  *------------------------------------------------------*',$0D,$0A
+                    DC.B '  *------------------------------------------------------*',$0D,$0A
+                    DC.B $0D,$0A,$0D,$0A
+                    DC.B ' Choose an item above, or press 0 to exit the shop: ', 0
+                    
+ITEM_QUANTITY:      DC.B $0D,$0A
+                    DC.B ' How many would you like to purchase: ',0                                                                                                             
 ENTER_USERNAME:     DC.B $0D,$0A
                     DC.B '  Welcome : ', 0
 WELCOME_PROMPT:     DC.B 'MISSION: STOP CLIMATE CHANGE AND SAVE THE WORLD',CR,LF,CR,LF,CR,LF
@@ -265,7 +360,7 @@ WELCOME_PROMPT:     DC.B 'MISSION: STOP CLIMATE CHANGE AND SAVE THE WORLD',CR,LF
                     DC.B 'within the next 365 days or the world ends. Good Luck and dont mess this up ',CR,LF,CR,LF,0
 
 BUY_A_TREE: DC.B 'Do you want to buy a tree?',CR,LF,0
-
+SUCCESS: DC.B 'YAY',0
 CHOICE: DC.B 'Enter 1 for Yes, 0 for No',CR,LF, 0
 
 EXIT_GAME: DC.B 'Enter 0 to end the loop!!', 0
@@ -285,6 +380,8 @@ TOTAL_CARBON:       DC.B $09
 TOTAL_CAPITAL: DC.B $09,$09,'Total Capital: ', 0
 
     END    START
+
+
 
 
 
