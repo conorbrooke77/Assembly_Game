@@ -31,8 +31,8 @@ START:
 GAME:
     *BSR ENTER_NAME_SCREEN  #Asks User for name
     *BSR GAME_LOAD_SCREEN_SR #Loads the games name in Ascii art
-    *#BSR WELCOME BRANCH TO WELCOME SCREEN
-    *#BSR CLEAR_SCREEN
+    *BSR WELCOME BRANCH TO WELCOME SCREEN
+    *BSR CLEAR_SCREEN
     BSR GAMELOOP    BRANCH TO GAMELOOP
 
 ENTER_NAME_SCREEN:
@@ -79,15 +79,31 @@ WELCOME:
 *-------------------------------------------------------
 
 GAMELOOP:
-   * BSR HUD #Displays the HUD AFTER EVERY LOOP
-    BSR SHOP #ALLOWS THE USER TO MAKE PURCHASES
-    BSR CLEAR_SCREEN #CLEARS THE SCREEN 
+    BSR HUD #Displays the HUD AFTER EVERY LOOP
+    BSR GAMEPLAY
     BRA UPDATE
 
+
+GAMEPLAY:
+    LEA SHOP_PROMPT, A1
+    MOVE.B #14, D0
+    TRAP #15
+    
+    LEA CHOICE, A1
+    TRAP #15
+    
+    MOVE.B #4, D0
+    TRAP #15
+    
+    CMP #1, D1
+    BEQ SHOP
+    
+    RTS
 *-------------------------------------------------------
 *-----------------THE SHOP---------------------
 *-------------------------------------------------------
 SHOP:
+    BSR CLEAR_SCREEN
     *LOAD SHOP GRAPHICS
     BSR SHOP_GUI
     BSR SHOP_INPUT
@@ -105,12 +121,8 @@ SHOP_INPUT:
     TRAP #15
     MOVE.B D1, D3
   
-    LEA ITEM_QUANTITY, A1
-    MOVE.B #14, D0
-    TRAP #15
-    
-    MOVE.B #4, D0
-    TRAP #15
+    CMP #0, D1
+    BNE QUANTITY
     
     *MENU'S IF ELSE STATEMENT
     CMP #1, D3
@@ -126,24 +138,28 @@ SHOP_INPUT:
     BEQ UPGRADE
     
     RTS
-   
-ADD_TREE_SR:
 
-    MULU COST_OF_TREE, D1
-    CMP $4400, D1
-    BEQ EPIC
-    
-    RTS
-EPIC:
-    LEA SUCCESS, A1
+QUANTITY:
+    LEA ITEM_QUANTITY, A1
     MOVE.B #14, D0
     TRAP #15
     
-    MOVE.W   #600,D1
-    MOVE.B   #23,D0
-    TRAP     #15
+    MOVE.B #4, D0
+    TRAP #15
+    
+ADD_TREE_SR:
+    
+    MOVE.W D1, D4
+    MULU.w #COST_OF_TREE, D1
+    
+    CMP.W ($4400), D1
+    BGE.S EPIC
     
     RTS
+EPIC:
+    ADD D4, $4100
+    
+    BSR SHOP
     
 ADD_SOLARPANEL_SR:
 
@@ -361,9 +377,11 @@ WELCOME_PROMPT:     DC.B 'MISSION: STOP CLIMATE CHANGE AND SAVE THE WORLD',CR,LF
 
 BUY_A_TREE: DC.B 'Do you want to buy a tree?',CR,LF,0
 SUCCESS: DC.B 'YAY',0
-CHOICE: DC.B 'Enter 1 for Yes, 0 for No',CR,LF, 0
 
-EXIT_GAME: DC.B 'Enter 0 to end the loop!!', 0
+SHOP_PROMPT: DC.B 'Would you like to enter the shop?',CR,LF, 0
+CHOICE: DC.B 'Enter 1 for Yes, 0 for No ', 0
+
+EXIT_GAME: DC.B 'Enter 0 to exit the game', 0
 
 TOTAL_TREES:    DC.B $09
                 DC.B 'Total trees: ', 0
@@ -380,6 +398,8 @@ TOTAL_CARBON:       DC.B $09
 TOTAL_CAPITAL: DC.B $09,$09,'Total Capital: ', 0
 
     END    START
+
+
 
 
 
